@@ -14,6 +14,12 @@ const typedL = R.mapObjIndexed(
   PL
 )
 
+const later = I.curry(
+  (ms, v) => new Promise(resolve => setTimeout(() => resolve(v), ms))
+)
+
+//
+
 const id = I.id
 const X = L
 
@@ -139,14 +145,14 @@ function showFunction(f) {
 }
 
 function testEq(expr, expect) {
-  it(`${showFunction(expr)} => ${show(expect)}`, () => {
-    const actual = expr()
+  it(`${showFunction(expr)} => ${show(expect)}`, async () => {
+    const actual = await expr()
     if (!equals(actual, expect))
       throw Error(`Expected: ${show(expect)}, actual: ${show(actual)}`)
 
     toggleEnv()
     try {
-      const actual = expr()
+      const actual = await expr()
       if (!equals(actual, expect))
         throw Error(`Expected: ${show(expect)}, actual: ${show(actual)}`)
     } finally {
@@ -155,7 +161,7 @@ function testEq(expr, expect) {
 
     L = typedL
     try {
-      const typed = expr()
+      const typed = await expr()
       if (!equals(actual, typed))
         throw Error(`Typed: ${show(typed)}, actual: ${show(actual)}`)
     } finally {
@@ -203,6 +209,7 @@ describe('arities', () => {
   const arities = {
     Constant: undefined,
     Identity: undefined,
+    IdentityAsync: undefined,
     all: 3,
     and: 2,
     any: 3,
@@ -275,6 +282,7 @@ describe('arities', () => {
     minimum: 2,
     minimumBy: 3,
     modify: 3,
+    modifyAsync: 3,
     modifyOp: 1,
     none: 3,
     normalize: 1,
@@ -1926,6 +1934,14 @@ describe('L.flat', () => {
       ]),
     [{a: [[{b: {c: -1}}], [{b: [{c: -2}]}]]}, {a: {b: {c: [[[-3]]]}}}]
   )
+})
+
+describe('L.modifyAsync', () => {
+  testEq(() => L.modifyAsync(L.elems, x => later(10, -x), [3, 1, 4]), [
+    -3,
+    -1,
+    -4
+  ])
 })
 
 if (process.env.NODE_ENV !== 'production') {
